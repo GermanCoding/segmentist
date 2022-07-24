@@ -1,0 +1,29 @@
+[package]
+name = "probes"
+version = "0.1.0"
+edition = '2018'
+
+[dependencies]
+cty = "0.2"
+redbpf-macros = { git = "https://github.com/GermanCoding/redbpf.git", branch = "pin-programs" }
+redbpf-probes = { git = "https://github.com/GermanCoding/redbpf.git", branch = "pin-programs" }
+
+[build-dependencies]
+cargo-bpf = { git = "https://github.com/GermanCoding/redbpf.git", branch = "pin-programs", default-features = false }
+
+[features]
+default = []
+probes = []
+
+[lib]
+path = "src/lib.rs"
+
+[[bin]]
+name = "packetsize_monitor"
+path = "src/packetsize_monitor/main.rs"
+required-features = ["probes"]
+
+[[bin]]
+name = "packet_inflator"
+path = "src/packet_inflator/main.rs"
+required-features = ["probes"]
