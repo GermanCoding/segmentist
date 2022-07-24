@@ -1,2 +1,4 @@
 /target
 .idea
+web/js/jquery-*
+web/css/bootstrap*

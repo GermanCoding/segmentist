@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Segmentist - Maximum Segment Size Test</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#111111" media="(prefers-color-scheme: light)">
+    <meta name="theme-color" content="#eeeeee" media="(prefers-color-scheme: dark)">
+    <link rel="stylesheet" type="text/css" href="css/bootstrap-dark.min.css">
+    <script type="text/javascript" src="js/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="js/submit.js"></script>
+</head>
+<body>
+<div class="px-4 py-5 text-center col-lg-6 mx-auto">
+    <h3>Segmentist - Maximum Segment Size Test</h3>
+    This is a test site to check whether a given HTTP(S) service appears to respect
+    Maximum Segment Size (MSS) restrictions.
+
+    <div class="alert alert-warning my-2">
+        Warning: This tool is currently in early alpha state. There are still missing
+        features, and incorrect results may appear. Help is appreciated!
+    </div>
+
+    <h4 class="py-2">What's MSS?</h4>
+    <p>
+        <a href="https://en.wikipedia.org/wiki/Maximum_segment_size">MSS</a> is the maximum
+        size a data packet can have in a TCP segment. A TCP segment is the payload contained
+        within TCP, i.e. the packet size without <a href="https://en.wikipedia.org/wiki/OSI_model">OSI</a> layer 2/3/4
+        headers.
+        MSS can be advertised by hosts during the TCP handshake and is often 1460 bytes, because the
+        maximum size of an IP data-packet is often 1500 bytes, and the IPv4 and TCP headers are
+        ~40 bytes long, though this can vary depending on options.
+    </p>
+
+    <h4 class="py-2">About this tool</h4>
+    <p>
+        This tool (source <a href="https://github.com/GermanCoding/segmentist">on GitHub</a>) allows you to test a
+        certain server, identified by an URL, to check whether
+        that host appears to honor the MSS advertised by a system. To do this, this tool advertises
+        a <i>fake</i> MSS of 1000 bytes, even though the underlying network is capable of handling
+        larger packets. We analyze raw network packets to check their sizes and then infer whether
+        a host appears to honor the 1000 byte limit. 1000 bytes is much lower than what a usual
+        network can handle, but it's also not unreasonably small.
+
+    <div class="form-group text-start">
+        <form action="javascript:send_it(this)">
+            <label for="url">URL: (i.e. https://example.com)</label>
+            <div class="row">
+                <div class="col-10 align-self-start">
+                    <input type="text" class="form-control" id="url">
+                </div>
+                <div class="col align-self-center">
+                    <input type="submit" class="form-control" value="Check"/>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div id="results">
+    </div>
+
+    <hr/>
+    <div class="alert alert-warning my-2">
+        <h4 class="py-2">Limitations</h4>
+        <ul class="text-start">
+            <li>Only HTTP and HTTPS protocols are supported. Custom ports are supported.
+                No certificate verification is performed.
+            </li>
+            <li>Only IPv4 is supported at this time. IPv6 support is on the roadmap, but its
+                a non-trivial amount of effort.
+            </li>
+            <li>Error messages are fairly basic, much like the entire tool.</li>
+            <li>Fragmented IP packets can cause issues, if the fragmented packets are
+                larger than the initial fragmented packet. This is due to a parser problem.
+            </li>
+            <li>If the HTTP(S) data exchange is too small, the tool may result inaccurate results,
+                because the target never had a reason to send large packets. It is preferable to
+                point this tool to URLs responding with at least 1KB of data.
+            </li>
+        </ul>
+    </div>
+</div>
+</div>
+</body>
+</html>

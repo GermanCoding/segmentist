@@ -1,10 +1,10 @@
 #!/bin/bash
 if [ $# -ne 3 ];
-    then echo "Usage ./IPTABLES_CMDS.sh <interface name> <outgoing IP> <outgoing interface>"
+    then echo "Usage ./IPTABLES_CMDS.sh <interface name> <outgoing IP> <outgoing interface>"; exit 0
 fi
-interface = $1
-ip = $2
-interface_out = $3
+interface=$1
+ip=$2
+interface_out=$3
 
 sudo modprobe dummy
 sudo ip link add $interface type dummy
