@@ -20,6 +20,14 @@ pub const ADVERTISED_MSS: u32 = 1000;
 // We don't actually advertise a MTU: Estimated based on 20 bytes IP header + 20 bytes TCP header
 pub const ADVERTISED_MTU: u32 = ADVERTISED_MSS + 40;
 
+pub const INFO: &str = concat!(
+env!("CARGO_PKG_NAME"),
+"/",
+env!("CARGO_PKG_VERSION"),
+" +",
+env!("CARGO_PKG_REPOSITORY")
+);
+
 pub mod connection;
 pub mod web;
 

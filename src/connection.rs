@@ -14,6 +14,17 @@ use std::os::unix::io::AsRawFd;
 use std::str::FromStr;
 use tokio::net::TcpSocket;
 
+struct ConnGuard<'a> {
+    conn: &'a ConnectionV4,
+    map: &'a LruHashMap<'a, ConnectionV4, ScanResult>,
+}
+
+impl<'a> Drop for ConnGuard<'a> {
+    fn drop(&mut self) {
+        clear_connection(self.map, self.conn.clone());
+    }
+}
+
 pub struct PrintableResult {
     pub warnings: Vec<String>,
     pub notices: Vec<String>,
@@ -123,6 +134,11 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
         u32::from(address.ip().to_owned()).to_be(),
         address.port().to_be(),
     );
+    // Guard will clean up the map on drop
+    let conn_guard = ConnGuard {
+        conn: &conn,
+        map: &map,
+    };
     monitor_connection(&map, conn.clone());
 
     let stream = tokio::time::timeout(
@@ -175,12 +191,13 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
     let request = Request::builder()
         .uri(uri.clone())
         .header("Host", uri.host().unwrap().to_string())
-        .header("User-Agent", "Segmentist (+TODO: URL)")
+        .header("User-Agent", crate::INFO)
         .method("GET")
         .body(Body::from(""))?;
     let response = request_sender.send_request(request).await?;
     let result = get_monitor_result(&map, conn.clone())?;
-    clear_connection(&map, conn.clone());
+    // Explicitly drop here to prevent compiler optimizations from dropping early
+    drop(conn_guard);
     Ok(InternalResult {
         addr: address,
         result,
