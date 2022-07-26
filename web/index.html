@@ -47,11 +47,15 @@
         <form action="javascript:send_it(this)">
             <label for="url">URL: (i.e. https://example.com)</label>
             <div class="row">
-                <div class="col-10 align-self-start">
+                <div class="col">
                     <input type="text" class="form-control" id="url">
                 </div>
-                <div class="col align-self-center">
-                    <input type="submit" class="form-control" value="Check"/>
+                <div class="col col-auto align-self-end">
+                    <button type="submit" class="form-control" id="submit">
+                        <span class="spinner-border spinner-border-sm me-2" role="status" hidden=true aria-hidden="true"
+                              id="spinner"></span>
+                        Check
+                    </button>
                 </div>
             </div>
         </form>
