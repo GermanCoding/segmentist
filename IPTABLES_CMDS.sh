@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 if [ $# -ne 3 ];
     then echo "Usage ./IPTABLES_CMDS.sh <interface name> <outgoing IP> <outgoing interface>"; exit 0
 fi
