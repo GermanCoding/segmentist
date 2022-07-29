@@ -101,7 +101,6 @@ fn main() {
                         .expect("")
                         .to_printable()
                 );
-                // tokio::signal::ctrl_c().await.expect("");
             });
         }
         "web" => {

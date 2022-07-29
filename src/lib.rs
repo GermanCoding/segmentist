@@ -21,11 +21,11 @@ pub const ADVERTISED_MSS: u32 = 1000;
 pub const ADVERTISED_MTU: u32 = ADVERTISED_MSS + 40;
 
 pub const INFO: &str = concat!(
-env!("CARGO_PKG_NAME"),
-"/",
-env!("CARGO_PKG_VERSION"),
-" +",
-env!("CARGO_PKG_REPOSITORY")
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+    " +",
+    env!("CARGO_PKG_REPOSITORY")
 );
 
 pub mod connection;
@@ -217,7 +217,7 @@ pub fn drop_root(user: &str) {
         .expect(format!("Failed to set caps to {}", cap).as_str());
     // Re-add it to effective set (likely got cleared when dropping root)
     caps::set(None, CapSet::Effective, &caps)
-        .expect(format!("Failed to allow inherit of cap {}", cap).as_str());
+        .expect(format!("Failed to reset effective to cap {}", cap).as_str());
     // One last safety check: We're definitely no longer root?
     no_longer_root();
 }

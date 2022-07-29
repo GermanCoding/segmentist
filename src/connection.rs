@@ -1,3 +1,4 @@
+use crate::SegmentistError::MalformedURL;
 use crate::{
     check_url, clear_connection, get_monitor_result, monitor_connection, SegmentistError,
     ADVERTISED_MSS, ADVERTISED_MTU, CONNECT_TIMEOUT,
@@ -189,15 +190,21 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
     }?;
 
     let request = Request::builder()
-        .uri(uri.clone())
-        .header("Host", uri.host().unwrap().to_string())
+        .uri(uri.path_and_query().ok_or(MalformedURL)?.to_owned())
+        .header(
+            "Host",
+            uri.host().ok_or(SegmentistError::MalformedURL)?.to_string(),
+        )
         .header("User-Agent", crate::INFO)
         .method("GET")
         .body(Body::from(""))?;
+
     let response = request_sender.send_request(request).await?;
     let result = get_monitor_result(&map, conn.clone())?;
+
     // Explicitly drop here to prevent compiler optimizations from dropping early
     drop(conn_guard);
+
     Ok(InternalResult {
         addr: address,
         result,
