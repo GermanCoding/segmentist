@@ -4,7 +4,11 @@ pub const FLAG_FRAGMENTATION_DETECTED: u32 = 1;
 /// At least one packet had the Don't Fragment (DF) bit set
 pub const FLAG_FRAGMENTATION_PROHIBITED: u32 = 2;
 
-pub const FLAG_STRANGE_OFFSET: u32 = 4;
+/// The target host does not use the TCP timestamp option, usually decreasing TCP header size by 12
+/// bytes, but preventing some optimization algorithms
+pub const FLAG_NO_TSOPT: u32 = 4;
+
+pub const MAX_OPTIONS_SIZE: usize = 60;
 
 // This is not an actual 4-tuple one would normally use to identify TCP connections.
 // The problem is that we don't really know what *our* dst address/port is, as we're likely
@@ -44,7 +48,7 @@ impl Default for ScanResult {
             max_packet_size: 0,
             max_segment_size: 0,
             flags: 0,
-            byte_count: 0
+            byte_count: 0,
         }
     }
 }

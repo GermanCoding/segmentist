@@ -3,7 +3,7 @@
 
 use probes::packetsize_monitor::{
     ConnectionV4, ScanResult, FLAG_FRAGMENTATION_DETECTED, FLAG_FRAGMENTATION_PROHIBITED,
-    FLAG_STRANGE_OFFSET,
+    FLAG_NO_TSOPT, MAX_OPTIONS_SIZE,
 };
 use redbpf_probes::xdp::prelude::*;
 
@@ -15,6 +15,59 @@ program!(0xFFFFFFFE, "GPL");
 #[map]
 static mut OBSERVED_PACKET_SIZE: LruHashMap<ConnectionV4, ScanResult> =
     LruHashMap::with_max_entries(10240);
+
+/// Scans the TCP header options, if any, and looks for the timestamp option (TS OPT)
+#[inline(always)]
+unsafe fn has_tcp_timestamp_option(tcphdr: *const tcphdr, ctx: &XdpContext) -> bool {
+    // Offset is in 4-byte words
+    let offset_count = (*tcphdr).doff() * 4;
+    // TCP header has a minimum of 20 bytes, so anything greater
+    // means we have options
+    if offset_count > 20 && offset_count <= MAX_OPTIONS_SIZE as u16 {
+        let option_bytes = (offset_count - 20) as u8;
+        let base_address = (tcphdr as usize + 20) as *const u8;
+        let mut offset: u8 = 0;
+        let mut length_read = false;
+        for _ in 0..(MAX_OPTIONS_SIZE - 20) {
+            if offset > option_bytes {
+                break;
+            }
+            let address = base_address as usize + offset as usize;
+            if address < ctx.data_start() || address >= ctx.data_end() {
+                break;
+            }
+            let byte = *(address as *const u8);
+            offset += 1;
+
+            if !length_read {
+                if byte == 0x00 {
+                    // End of header
+                    break;
+                }
+
+                if byte == 0x01 {
+                    // NOP, skip
+                    continue;
+                }
+
+                if byte == 0x08 {
+                    // TCP timestamp option
+                    return true;
+                }
+
+                // Unknown option. Check length on next iteration
+                length_read = true;
+            } else {
+                if length_read {
+                    // Skip unknown option determined on previous iteration
+                    length_read = false;
+                    offset += byte - 1;
+                }
+            }
+        }
+    }
+    false
+}
 
 #[xdp]
 unsafe fn packetsize_monitor(ctx: XdpContext) -> XdpResult {
@@ -43,14 +96,9 @@ unsafe fn packetsize_monitor(ctx: XdpContext) -> XdpResult {
                 - ((*tcphdr).doff() * 4) as usize;
             if segment_size > scan_result.max_segment_size as usize {
                 scan_result.max_segment_size = segment_size as u32;
-            }
-            if (*tcphdr).doff() != 5 && packet_size > 200 {
-                scan_result.flags |= FLAG_STRANGE_OFFSET;
-            }
-            if let Ok(data) = ctx.data() {
-                let segment_size = data.len();
-                if segment_size > scan_result.max_segment_size as usize {
-                    scan_result.max_segment_size = segment_size as u32;
+                if !has_tcp_timestamp_option(tcphdr, &ctx) {
+                    // Unusual trivia: No timestamp option, note this
+                    scan_result.flags |= FLAG_NO_TSOPT;
                 }
             }
 
