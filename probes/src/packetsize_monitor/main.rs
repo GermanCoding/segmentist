@@ -3,6 +3,7 @@
 
 use probes::packetsize_monitor::{
     ConnectionV4, ScanResult, FLAG_FRAGMENTATION_DETECTED, FLAG_FRAGMENTATION_PROHIBITED,
+    FLAG_STRANGE_OFFSET,
 };
 use redbpf_probes::xdp::prelude::*;
 
@@ -30,9 +31,10 @@ unsafe fn packetsize_monitor(ctx: XdpContext) -> XdpResult {
             // Note that we can't rely on IP header data, as the packet may be fragmented
             // This is essentially the layer 3 MTU
             let packet_size = ctx.len() - (iphdr as usize - ctx.data_start());
+            // Our network interface won't handle packets larger than a few thousand bytes,
+            // so cast *should* never be lossy
+            scan_result.byte_count += packet_size as u32;
             if packet_size > scan_result.max_packet_size as usize {
-                // Our network interface won't handle packets larger than a few thousand bytes,
-                // so cast *should* never be lossy
                 scan_result.max_packet_size = packet_size as u32;
             }
             // The MSS actually only counts the TCP payload (the segment), not TCP + IP header data
@@ -41,6 +43,15 @@ unsafe fn packetsize_monitor(ctx: XdpContext) -> XdpResult {
                 - ((*tcphdr).doff() * 4) as usize;
             if segment_size > scan_result.max_segment_size as usize {
                 scan_result.max_segment_size = segment_size as u32;
+            }
+            if (*tcphdr).doff() != 5 && packet_size > 200 {
+                scan_result.flags |= FLAG_STRANGE_OFFSET;
+            }
+            if let Ok(data) = ctx.data() {
+                let segment_size = data.len();
+                if segment_size > scan_result.max_segment_size as usize {
+                    scan_result.max_segment_size = segment_size as u32;
+                }
             }
 
             // frag_off stores the entire 16 bit (flags + offset),

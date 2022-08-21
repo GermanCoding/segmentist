@@ -7,6 +7,7 @@ use hyper::{Body, Request, StatusCode};
 use nix::sys::time::{TimeVal, TimeValLike};
 use probes::packetsize_monitor::{
     ConnectionV4, ScanResult, FLAG_FRAGMENTATION_DETECTED, FLAG_FRAGMENTATION_PROHIBITED,
+    FLAG_STRANGE_OFFSET,
 };
 use redbpf::{LruHashMap, Map};
 use std::fmt::{Display, Formatter};
@@ -79,10 +80,20 @@ impl InternalResult {
             if packets exceed the Maximum Segment Size or Maximum Transmission Unit of a network."
             ));
         }
+        if self.result.flags & FLAG_STRANGE_OFFSET != 0 {
+            warnings.push(format!(
+                "Debug: Received TCP headers not sized to 20 bytes."
+            ))
+        }
         if self.result.max_packet_size == 0 {
             // We got no data???
             errors.push(format!("An internal error occurred: No data received."));
         } else {
+            if self.result.byte_count <= ADVERTISED_MTU {
+                warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test\
+                using a URL responding with more data. Hint: HTTPS URLS generally produce larger responses, due to the TLS handshake.", self.result.byte_count));
+            }
+
             if self.result.max_segment_size <= ADVERTISED_MSS {
                 // MSS looks good, check if MTU matches too
                 if self.result.max_packet_size <= ADVERTISED_MTU {
