@@ -82,7 +82,8 @@ impl InternalResult {
         }
         if self.result.flags & FLAG_NO_TSOPT != 0 {
             notices.push(format!(
-                "Trivia: The target server does not use the TCP timestamp option, decreasing the TCP header size by approximately 12 bytes (but preventing optimizations)."
+                "Trivia: The target server does not use the TCP timestamp option, decreasing the \
+                TCP header size by approximately 12 bytes (but preventing optimizations)."
             ))
         }
 
@@ -91,7 +92,7 @@ impl InternalResult {
             errors.push(format!("An internal error occurred: No data received."));
         } else {
             if self.result.byte_count <= ADVERTISED_MTU {
-                warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test\
+                warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test \
                 using a URL responding with more data. Hint: HTTPS URLS generally produce larger responses, due to the TLS handshake.", self.result.byte_count));
             }
 
@@ -142,7 +143,7 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
         nix::sys::socket::sockopt::ReceiveTimeout,
         &TimeVal::seconds(10), // TODO: Magic
     )
-    .or_else(|_| Err(SegmentistError::Other))?;
+        .or_else(|_| Err(SegmentistError::Other))?;
     let conn = ConnectionV4::new(
         u32::from(address.ip().to_owned()).to_be(),
         address.port().to_be(),
@@ -158,8 +159,8 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
         CONNECT_TIMEOUT,
         socket.connect(SocketAddr::from(address.clone())),
     )
-    .await
-    .or_else(|_| Err(SegmentistError::ConnectTimeout(address.clone())))??;
+        .await
+        .or_else(|_| Err(SegmentistError::ConnectTimeout(address.clone())))??;
     let scheme = uri.scheme().ok_or(SegmentistError::MalformedURL)?;
     let mut request_sender = match scheme.as_str().to_ascii_lowercase().as_str() {
         "http" => {
