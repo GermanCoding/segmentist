@@ -11,14 +11,14 @@ function send_it(form) {
             if (xhr.status === 200) {
                 // Print received data from server
                 let response = JSON.parse(this.responseText);
-                $.each(response['notices'], function (_, item) {
-                    $("#results").append("<div class=\"alert alert-secondary my-2\">" + escapeHTML(item) + "</div>")
-                });
                 $.each(response['warnings'], function (_, item) {
                     $("#results").append("<div class=\"alert alert-warning my-2\">" + escapeHTML(item) + "</div>")
                 });
                 $.each(response['errors'], function (_, item) {
                     $("#results").append("<div class=\"alert alert-danger my-2\">" + escapeHTML(item) + "</div>")
+                });
+                $.each(response['notices'], function (_, item) {
+                    $("#results").append("<div class=\"alert alert-secondary my-2\">" + escapeHTML(item) + "</div>")
                 });
             } else {
                 $("#results").append("<div class=\"alert alert-danger my-2\">Unable to communicate with server: HTTP error " + xhr.status + " " + xhr.statusText + "</div>")
