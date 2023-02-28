@@ -1,7 +1,7 @@
 use crate::SegmentistError::MalformedURL;
 use crate::{
-    check_url, clear_connection, get_monitor_result, monitor_connection, SegmentistError,
-    ADVERTISED_MSS, ADVERTISED_MTU, CONNECT_TIMEOUT,
+    check_url, clear_connection, get_monitor_result, monitor_connection, ScanRequest,
+    SegmentistError, ADVERTISED_MSS, ADVERTISED_MTU, CONNECT_TIMEOUT,
 };
 use hyper::{Body, Request, StatusCode};
 use nix::sys::time::{TimeVal, TimeValLike};
@@ -90,7 +90,7 @@ impl InternalResult {
             // We got no data???
             errors.push(format!("An internal error occurred: No data received."));
         } else {
-            if self.result.byte_count <= ADVERTISED_MTU {
+            if self.result.byte_count <= 2 * ADVERTISED_MTU {
                 warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test\
                 using a URL responding with more data. Hint: HTTPS URLS generally produce larger responses, due to the TLS handshake.", self.result.byte_count));
             }
@@ -127,11 +127,11 @@ impl InternalResult {
     }
 }
 
-pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistError> {
-    let url = check_url(url)?;
+pub async fn connect<'a>(request: ScanRequest<'a>) -> Result<InternalResult, SegmentistError> {
+    let url = check_url(request.url)?;
     let address = url.address;
     let uri = url.uri;
-    let map = LruHashMap::<ConnectionV4, ScanResult>::new(&map)?;
+    let map = LruHashMap::<ConnectionV4, ScanResult>::new(&request.map)?;
     let socket = TcpSocket::new_v4()?;
     socket.bind(SocketAddr::V4(SocketAddrV4::new(
         Ipv4Addr::from_str("10.11.12.13")?, // TODO: Magic
@@ -140,7 +140,7 @@ pub async fn connect(url: &str, map: &Map) -> Result<InternalResult, SegmentistE
     nix::sys::socket::setsockopt(
         socket.as_raw_fd(),
         nix::sys::socket::sockopt::ReceiveTimeout,
-        &TimeVal::seconds(10), // TODO: Magic
+        &TimeVal::seconds(CONNECT_TIMEOUT.as_secs() as i64),
     )
     .or_else(|_| Err(SegmentistError::Other))?;
     let conn = ConnectionV4::new(
