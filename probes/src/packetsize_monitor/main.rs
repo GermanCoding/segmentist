@@ -58,11 +58,9 @@ unsafe fn has_tcp_timestamp_option(tcphdr: *const tcphdr, ctx: &XdpContext) -> b
                 // Unknown option. Check length on next iteration
                 length_read = true;
             } else {
-                if length_read {
-                    // Skip unknown option determined on previous iteration
-                    length_read = false;
-                    offset += byte - 1;
-                }
+                // Skip unknown option determined on previous iteration
+                length_read = false;
+                offset += byte - 1;
             }
         }
     }
