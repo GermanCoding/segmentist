@@ -15,37 +15,65 @@ use tracing_subscriber::FmtSubscriber;
 
 fn probe_code() -> &'static [u8] {
     include_bytes!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/target/bpf/programs/packetsize_monitor/packetsize_monitor.elf"
+    env!("CARGO_MANIFEST_DIR"),
+    "/target/bpf/programs/packetsize_monitor/packetsize_monitor.elf"
     ))
 }
 
 const HELP: &str = "\
 Segmentist - Test whether TCP Maximum Segment Size (MSS) is honored
 USAGE:
-  segmentist TODO
+  segmentist ACTION <args>
+ACTIONS:
+  Note: For all actions, more detail is available via segmentist ACTION without further arguments.
+  load <interface>       - Loads the eBPF program(s) into the kernel. They remain
+                           active until system is rebooted, or are manually unloaded.
+                           The test and web commands require the programs to be already
+                           loaded, or they will fail.
+  unload <interface>     - Unloads the eBPF program(s) from the kernel, when loaded via segmentist load.
+  test <user> <url>      - Performs a single test of the given URL. Permissions are dropped to <user>.
+  web <user> <ip> <port> - Starts the web backend, which will listen for URLs to scan on http://ip:port/scanurl
 ARGS:
-  <TODO> - TODO.
+  <interface>            - An interface to attach or detach the eBPF program(s) to/from.
+                           Example: eth0
+  <user>                 - All commands require root initially for setup. Once setup is complete, programs drop their
+                           root permissions and switch to the given username.
+                           NOTE: Depending on your kernel version, some actions retain either CAP_SYS_ADMIN or CAP_BPF
+                           capabilities to interact with the eBPF system without being root.
+                           Example: nobody
+  <url>                  - A url to scan. Must be in a fully-defined form, i.e. https://example.com
+  <bind ip>              - An IP address to bind to.
+                           Example: 127.0.0.1
+  <bind port>            - A port number to bind to.
+                           Example: 8080
 ";
 
 const HELP_LOAD: &str = "\
 USAGE:
-  segmentist load <interface>
+  segmentist load <interface> - Load the eBPF program(s) into the kernel and attaches them to <interface>,
+                                identified by name. This should be the (physical) interface of your system,
+                                where you expect network packets to arrive from. MTU & MSS is measured on
+                                this interface.
 ";
 
 const HELP_UNLOAD: &str = "\
 USAGE:
-  segmentist unload <interface>
+  segmentist unload <interface> - Unload the eBPF program(s) from the kernel, detaching them from <interface>.
+                                  Basically, the opposite of segmentist load.
 ";
 
 const HELP_TEST: &str = "\
 USAGE:
-  segmentist test <user> <url>
+  segmentist test <user> <url> - Scans a single URL <url>, returning its results on the command line.
+                                 After setup, permissions are dropped and user is changed to <user>.
 ";
 
 const HELP_WEB: &str = "\
 USAGE:
-  segmentist web <user> <bind ip> <bind port>
+  segmentist web <user> <bind ip> <bind port> - Runs the web backend. After setup, permissions are dropped
+                                                and user is changed to <user>. The HTTP server is bound to
+                                                <bind ip> and <bind port>. Currently, the only available
+                                                endpoint is  http://<bind-ip>:<bind-port>/scanurl
 ";
 
 fn main() {
@@ -121,7 +149,7 @@ fn main() {
                     args[3].parse::<u16>().expect("Failed to parse port"),
                     map,
                 )
-                .await;
+                    .await;
             });
         }
         &_ => {
@@ -182,7 +210,7 @@ fn load_xdp(interface: &str) {
             .expect("Failed to get file descriptor for XDP program"),
         PIN_XDP_PROGRAM,
     )
-    .expect("Failed to pin XDP program");
+        .expect("Failed to pin XDP program");
     // RedBPF automatically detaches the XDP interface once this struct is dropped
     // We don't want that, so we need to ensure that it is never dropped.
     // (This does create a memory leak, but we're going to terminate now anyway)

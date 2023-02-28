@@ -82,7 +82,8 @@ impl InternalResult {
         }
         if self.result.flags & FLAG_NO_TSOPT != 0 {
             notices.push(format!(
-                "Trivia: The target server does not use the TCP timestamp option, decreasing the TCP header size by approximately 12 bytes (but preventing optimizations)."
+                "Trivia: The target server does not use the TCP timestamp option, decreasing the \
+                TCP header size by approximately 12 bytes (but preventing optimizations)."
             ))
         }
 
@@ -91,7 +92,7 @@ impl InternalResult {
             errors.push(format!("An internal error occurred: No data received."));
         } else {
             if self.result.byte_count <= 2 * ADVERTISED_MTU {
-                warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test\
+                warnings.push(format!("Received a small response of only {}  bytes. This might cause inaccurate results. If possible, repeat this test \
                 using a URL responding with more data. Hint: HTTPS URLS generally produce larger responses, due to the TLS handshake.", self.result.byte_count));
             }
 
