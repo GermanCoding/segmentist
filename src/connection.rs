@@ -9,7 +9,7 @@ use probes::packetsize_monitor::{
     ConnectionV4, ScanResult, FLAG_FRAGMENTATION_DETECTED, FLAG_FRAGMENTATION_PROHIBITED,
     FLAG_NO_TSOPT,
 };
-use redbpf::{LruHashMap, Map};
+use redbpf::LruHashMap;
 use std::fmt::{Display, Formatter};
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 use std::os::unix::io::AsRawFd;
@@ -128,7 +128,7 @@ impl InternalResult {
 }
 
 pub async fn connect<'a>(request: ScanRequest<'a>) -> Result<InternalResult, SegmentistError> {
-    let url = check_url(request.url)?;
+    let url = check_url(&request.url)?;
     let address = url.address;
     let uri = url.uri;
     let map = LruHashMap::<ConnectionV4, ScanResult>::new(&request.map)?;

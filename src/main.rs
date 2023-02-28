@@ -4,7 +4,8 @@ use redbpf::{detach_xdp, if_nametoindex, pin_bpf_obj, unpin_bpf_obj, LruHashMap}
 use segmentist::connection::connect;
 use segmentist::web::web_main;
 use segmentist::{
-    drop_root, load_map_from_pin, PIN_OBSERVED_PACKET_SIZE, PIN_XDP_PROGRAM, XDP_PROGRAM_NAME,
+    drop_root, load_map_from_pin, ScanRequest, ADVERTISED_MSS, ADVERTISED_MTU,
+    PIN_OBSERVED_PACKET_SIZE, PIN_XDP_PROGRAM, XDP_PROGRAM_NAME,
 };
 use std::env;
 use std::future::Future;
@@ -94,13 +95,13 @@ fn main() {
             drop_root(args[1].as_str());
             tokio_run(async move {
                 // Just panic on any error, no reason to handle them gracefully
-                println!(
-                    "{}",
-                    connect(args[2].as_str(), &map)
-                        .await
-                        .expect("")
-                        .to_printable()
-                );
+                let request = ScanRequest {
+                    url: args[2].to_string(),
+                    map: &map,
+                    advertised_mss: ADVERTISED_MSS as usize,
+                    advertised_mtu: ADVERTISED_MTU as usize,
+                };
+                println!("{}", connect(request).await.unwrap().to_printable());
             });
         }
         "web" => {

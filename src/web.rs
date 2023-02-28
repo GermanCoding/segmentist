@@ -1,4 +1,4 @@
-use crate::connection;
+use crate::{connection, ScanRequest, ADVERTISED_MSS, ADVERTISED_MTU};
 use actix_web::{post, web, App, HttpServer, Responder};
 use redbpf::Map;
 use serde::Deserialize;
@@ -17,7 +17,13 @@ struct Request {
 #[post("/scanurl")]
 async fn scan_url(form: web::Json<Request>, data: web::Data<AppState>) -> impl Responder {
     let url = &form.url;
-    let result = connection::connect(url.as_str(), &data.map).await;
+    let request = ScanRequest {
+        url: url.to_owned(),
+        map: &data.map,
+        advertised_mss: ADVERTISED_MSS as usize,
+        advertised_mtu: ADVERTISED_MTU as usize,
+    };
+    let result = connection::connect(request).await;
     let mut notices: Vec<String> = vec![];
     let mut errors: Vec<String> = vec![];
     let mut warnings: Vec<String> = vec![];

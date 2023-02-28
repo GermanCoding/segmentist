@@ -16,9 +16,9 @@ pub const PIN_OBSERVED_PACKET_SIZE: &str = "/sys/fs/bpf/observed_packet_size";
 pub const PIN_XDP_PROGRAM: &str = "/sys/fs/bpf/packetsize_monitor";
 pub const MIN_KERNEL_VERSION_CAP_BPF: &'static str = "5.8.0";
 pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(10);
-const ADVERTISED_MSS: u32 = 1000;
+pub const ADVERTISED_MSS: u32 = 1000;
 // We don't actually advertise a MTU: Estimated based on 20 bytes IP header + 20 bytes TCP header
-const ADVERTISED_MTU: u32 = ADVERTISED_MSS + 40;
+pub const ADVERTISED_MTU: u32 = ADVERTISED_MSS + 40;
 
 pub const INFO: &str = concat!(
     env!("CARGO_PKG_NAME"),
@@ -147,7 +147,7 @@ impl From<native_tls::Error> for SegmentistError {
 }
 
 pub struct ScanRequest<'a> {
-    pub url: &'a str,
+    pub url: String,
     pub map: &'a Map,
     pub advertised_mss: usize,
     pub advertised_mtu: usize,
