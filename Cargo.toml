@@ -1,6 +1,6 @@
 [package]
 name = "segmentist"
-version = "0.3.0"
+version = "0.4.0"
 repository = "https://github.com/GermanCoding/segmentist"
 license = "GPL-3.0-or-later"
 edition = "2021"
@@ -16,7 +16,7 @@ libc = "0.2"
 users = "0.11"
 caps = "0.5"
 semver = "1.0"
-nix = { version = "0.24", features = ["process"] }
+nix = { version = "0.26", features = ["process"] }
 hyper = { version = "0.14", features = ["full"] }
 tokio-native-tls = "0.3"
 probes = { path = "./probes" }
